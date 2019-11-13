@@ -1,72 +1,147 @@
 import numpy as np
-from scipy.optimize import minimize
+from vmi_parameter import *
+import random
 
+DA = np.ones((j,k))                     # j*k
+DP =  np.ones((m,g))            # m*g
+pw = pw0
 
-
-m = 3
-g = 4
-j=2
-k=3
-s=3
-l=3
-## 1
-## 2
-## 3
-w0 = 1                  # 1
-
-## 9
-wm = np.ones((m))       # m
-## 10
-TMP = 1      # 1
-## 11
-TA = 1                      # 1
-
-DP =  np.ones((m,g))                      # m*g
+# print(DP.flatten())
 ## find
 
-A = np.ones((g))                       # g
-c = np.ones((m))                       # m
-crm = np.ones((s))                     # s
-drm = np.ones((s,l))                     # sl
-fpp = np.ones((g))                      # g
-fpm = np.ones((j))                     # j
-fpa = np.ones((j,k))                     # j*k
-rho = np.zeros((g))     # g
+# A = np.ones((g))                       # g
+# c = np.ones((m))                       # m
+# crm = np.ones((s))                     # s
+# drm = np.ones((s,l))                     # sl
+# fpp = np.ones((g))                      # g
+# fpm = np.ones((j))                     # j
+# fpa = np.ones((j,k))                     # j*k
+# rho = np.zeros((g))                    # g
+#
+# NP1 = np.sum(np.multiply(DP, pw))
+#
+# NP2 = np.sum(np.multiply(c / 2, np.sum(np.multiply(DP, HR), axis=1))) - np.sum(np.multiply(teta, DP))
+# NP3 = np.sum(np.multiply(1 / c, OP)) + np.sum(np.multiply(c / 2, np.sum(np.multiply(DP, HP), axis=1)))
+# NP4 = np.sum(np.multiply(1 / crm, ORM)) + np.sum(np.multiply(crm / 2, np.sum(np.multiply(drm, HRM), axis=1)))
+# NP5 = np.sum(np.multiply(DP, TP)) + np.sum(np.multiply(DP, PCP)) + np.sum(np.multiply(DA, PCA)) + np.sum(
+#     np.multiply(drm, PCR))
+# NP6 = np.sum(np.multiply(fpp, FCP)) + np.sum(np.multiply(fpm, FCM)) + np.sum(np.multiply(fpa, FCA)) + np.sum(A)
+# print(NP1)
+# print(NP2)
+# print(NP3)
+# print(NP4)
+# print(NP5)
+# print(NP6)
+# NP = NP1 - NP2 - NP3 - NP4 - NP5 - NP6
+# print(NP)
 
-pw0 = np.ones((g))
-pw = pw0 - np.multiply(rho,DP)
+class Individual(object):
+    def __init__(self,var,obj):
+        self.var = var
+        self.obj_value = obj(self.var)
+    def __str__(self):
+        # return str(self.var) + "  " +str(self.obj_value)
+        return str(self.obj_value)
+
+def InitPopulation(N):
+    population = []
+    for i in range(N):
+        A = np.random.uniform(0,10000,size=g)
+        c = np.random.uniform(0,1,size=m)
+        crm = np.random.uniform(0,1,size=s)
+        drm = np.random.randint(0,2,size=s*l)
+        fpp = np.random.randint(0,2,size=g)
+        fpm = np.random.randint(0,2,size=j)
+        fpa = np.random.randint(0,2,size=j*k)
+        rho = np.random.uniform(0,1,size=g)
+        x = []
+        x.extend(A)
+        x.extend(c)
+        x.extend(crm)
+        x.extend(drm)
+        x.extend(fpp)
+        x.extend(fpm)
+        x.extend(fpa)
+        x.extend(rho)
+
+        x = np.array(x,dtype=float)         # shape = 35
+        population.append(Individual(x,Objective))
+    return population
+def Mutation(x1,x2):
+    a1 = Individual(np.concatenate([x1.var[:5],x2.var[5:]]),Objective)
+    a2 = Individual(np.concatenate([x1.var[:10],x2.var[10:]]),Objective)
+    a3 = Individual(np.concatenate([x1.var[:15],x2.var[15:]]),Objective)
+    a4 = Individual(np.concatenate([x1.var[:20],x2.var[20:]]),Objective)
+    a5 = Individual(np.concatenate([x1.var[:25],x2.var[25:]]),Objective)
+    a6 = Individual(np.concatenate([x1.var[:30],x2.var[30:]]),Objective)
+    return [a1,a2,a3,a4,a5,a6]
+
+def Selection(population,N):
+    population.sort(key = lambda x: x.obj_value)
+    return population[:N]
 
 
-## max
-HR = np.ones((m,g))                      # m*g
-teta = np.ones((m,g))                    # m*g
+def Objective(x):       #g+m+s+s*l+g+j+j*k+g
+    A = np.array(x[:g])
+    c = np.array(x[g:g+m])
+    crm = np.array(x[g+m:g+m+s])
+    drm = np.reshape(np.array(x[g+m+s:g+m+s+s*l]),(s,l))
+    fpp = np.array(x[g+m+s+s*l:g+m+s+s*l+g])
+    fpm = np.array(x[g+m+s+s*l+g:g+m+s+s*l+g+j])
+    fpa = np.reshape(np.array(x[g+m+s+s*l+g+j:g+m+s+s*l+g+j+j*k]),(j,k))
+    rho = np.array(x[g+m+s+s*l+g+j+j*k:])
+    # rho = np.array(x[-4:])
+    # print(x.shape)
+    # print(rho.shape)
+    pw = pw0 - np.multiply(rho, DP)
+    # print(pw)
+    NP1 = np.sum(np.multiply(DP,pw))
 
-OP = np.ones((m))                      # m
-HP = np.ones((g))                      # g
+    NP2 = np.sum(np.multiply(c/2,np.sum(np.multiply(DP,HR),axis=1))) - np.sum(np.multiply(teta,DP))
+    NP3 = np.sum(np.multiply(1/c,OP))+np.sum(np.multiply(c/2,np.sum(np.multiply(DP,HP),axis=1)))
+    NP4 = np.sum(np.multiply(1/crm,ORM))+np.sum(np.multiply(crm/2,np.sum(np.multiply(drm,HRM),axis=1)))
+    NP5 = np.sum(np.multiply(DP,TP)) + np.sum(np.multiply(DP,PCP))+np.sum(np.multiply(DA,PCA))+np.sum(np.multiply(drm,PCR))
+    NP6 = np.sum(np.multiply(fpp,FCP)) + np.sum(np.multiply(fpm,FCM))+np.sum(np.multiply(fpa,FCA))+np.sum(A)
 
-ORM = np.ones((s))                     # s
-HRM = np.ones((l))                     # l
+    NP = NP1-NP2-NP3-NP4-NP5-NP6
 
-TP = np.ones((m,g))                      # m*g
-PCP = np.ones((g))                     # g
+    return -NP
 
-PCA = np.ones((j,k))                     # j*k
+if __name__ == "__main__":
+    N = 1000
+    mutation = 0.1
 
-PCR = np.ones((s,l))                      # s*l
+    iter = 1000
+    population = InitPopulation(N)
 
-FCP = np.ones((g))                     # g
-FCM = np.ones((j))                     # j
-FCA = np.ones((j,k))                     # j*k
-DA = np.ones((j,k))                     # j*k
+    for i in range(1000):
+        for _ in range(int(1000*mutation)):
+            x1 = random.choice(population)
+            x2 = random.choice(population)
+            mu = Mutation(x1,x2)
+            population.extend(mu)
+        Selection(population,N)
+        print(population[0])
 
 
-NP1 = np.sum(np.multiply(DP,pw))
+# po = InitPopulation(10)
+#
+# x1 = po[0]
+# x2 = po[1]
+# print(Mutation(x1,x2))
+#
+#
+# x1 = random.choice(po)
+# x2 = random.choice(po)
+#
+# mutation = 0.1
+#
+# print(Mutation(x1,x2))
+# for _ in range(100):
+#     x1 = random.choice(po)
+#     x2 = random.choice(po)
+#     print(x1.var.shape)
+#     print(Mutation(x1,x2))
 
-NP2 = np.sum(np.multiply(c/2,np.sum(np.multiply(DP,HR),axis=1))) - np.sum(np.multiply(teta,DP))
-NP3 = np.sum(np.multiply(1/c,OP))+np.sum(np.multiply(c/2,np.sum(np.multiply(DP,HP),axis=1)))
-NP4 = np.sum(np.multiply(1/crm,ORM))+np.sum(np.multiply(crm/2,np.sum(np.multiply(drm,HRM),axis=1)))
-NP5 = np.sum(np.multiply(DP,TP)) + np.sum(np.multiply(DP,PCP))+np.sum(np.multiply(DA,PCA))+np.sum(np.multiply(drm,PCR))
-NP6 = np.sum(np.multiply(fpp,FCP)) + np.sum(np.multiply(fpm,FCM))+np.sum(np.multiply(fpa,FCA))+np.sum(A)
-
-NP = NP1-NP2-NP3-NP4-NP5-NP6
-print(NP)
+# print(x1.var.shape)
+# print(np.concatenate([x1.var[:10],x2.var[10:]]).shape)
