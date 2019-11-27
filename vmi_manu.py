@@ -3,7 +3,7 @@ from vmi_parameter import *
 import random
 
 DA = np.ones((j,k))                     # j*k
-DP =  np.ones((m,g))            # m*g
+DP = np.ones((m,g))            # m*g
 pw = pw0
 
 # print(DP.flatten())
