@@ -3,7 +3,7 @@ from scipy.optimize import minimize
 import random
 from vmi_parameter import *
 from vmi_retail import objective,constraint2,cacl_DP
-from vmi_manu import InitPopulation,Crossover,Selection,Objective,Mutation
+from vmi_manu_pso import *
 
 a = np.zeros((m,g))
 A = np.zeros((g))
@@ -26,9 +26,12 @@ if __name__ == "__main__":
 
     b = (1.0, 1000, 0)
     bnds = (b, b, b, b, b, b, b, b)
-
-    N = 100
+    N = 1000
+    W = 0.5
+    c1 = 0.8
+    c2 = 0.9
     population = InitPopulation(N)
+    search_space = Space(population, N, Objective)
     for _ in range(100):
         for _m in range(m):
             def constraint1(x):
@@ -58,23 +61,15 @@ if __name__ == "__main__":
 
         print("-------------------")
 
-        mutation = 0.1
-        crossover = 0.1
         iter = 100
 
-
         for i in range(iter):
-            for _ in range(int(iter*mutation)):
-                x1 = random.choice(population)
-                x2 = random.choice(population)
-                mu = Crossover(x1,x2)
-                population.extend(mu)
-            for _ in range(int(iter*crossover)):
-                x = random.choice(population)
-                x_new = Mutation(x)
-                population.append(x_new)
-            Selection(population,N)
-        x = population[0].var
+            search_space.set_pbest()
+            search_space.set_gbest()
+
+            search_space.move_particles()
+
+        x = search_space.gvar
         # print(x)
         A = np.array(x[:g])
         c = np.array(x[g:g + m])
@@ -84,4 +79,4 @@ if __name__ == "__main__":
         fpm = np.array(x[g + m + s + s * l + g:g + m + s + s * l + g + j])
         fpa = np.reshape(np.array(x[g + m + s + s * l + g + j:g + m + s + s * l + g + j + j * k]), (j, k))
         rho = np.array(x[g + m + s + s * l + g + j + j * k:])
-        print(population[0])
+        print(search_space.obj_value_g)
